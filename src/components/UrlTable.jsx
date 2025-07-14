@@ -1,34 +1,30 @@
-import { useEffect, useState } from "react";
-import { Table, TableHead, TableRow, TableCell, TableBody, Paper } from "@mui/material";
-import { getStoredUrls } from "../utils/urlUtils";
+import React from "react";
+import { Table, TableHead, TableRow, TableCell, TableBody, Paper, Typography } from "@mui/material";
 
-export default function UrlTable() {
-  const [urls, setUrls] = useState([]);
-
-  useEffect(() => {
-    setUrls(getStoredUrls());
-  }, []);
-
+function UrlTable({ urls }) {
   return (
-    <Paper>
+    <Paper elevation={3} sx={{ p: 2 }}>
+      <Typography variant="h6" gutterBottom>
+        Your Shortened URLs
+      </Typography>
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>Original URL</TableCell>
             <TableCell>Short URL</TableCell>
-            <TableCell>Expiry</TableCell>
+            <TableCell>Original URL</TableCell>
             <TableCell>Clicks</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {urls.map((entry, idx) => (
-            <TableRow key={idx}>
-              <TableCell>{entry.originalUrl}</TableCell>
+          {urls.map((url) => (
+            <TableRow key={url._id}>
               <TableCell>
-                <a href={`/${entry.shortCode}`}>{entry.shortCode}</a>
+                <a href={url.longUrl} target="_blank" rel="noopener noreferrer">
+                  {url.shortUrl}
+                </a>
               </TableCell>
-              <TableCell>{new Date(entry.expiresAt).toLocaleTimeString()}</TableCell>
-              <TableCell>{entry.clicks.length}</TableCell>
+              <TableCell>{url.longUrl}</TableCell>
+              <TableCell>{url.clicks}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -36,3 +32,5 @@ export default function UrlTable() {
     </Paper>
   );
 }
+
+export default UrlTable;

@@ -1,55 +1,73 @@
-import { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useParams, useNavigate } from "react-router-dom";
-import { Container, Typography } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Container,
+  Box,
+  CircularProgress,
+} from "@mui/material";
+import Login from "./components/login";
 import UrlShortenerForm from "./components/UrlShortenerForm";
 import UrlTable from "./components/UrlTable";
-import { getStoredUrls, updateClickData } from "./utils/urlUtils";
-import { logEvent } from "./utils/logger";
 
-function RedirectPage() {
-  const { shortCode } = useParams();
-  const navigate = useNavigate();
+function App() {
+  const [urls, setUrls] = useState([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(null); // null = loading
 
   useEffect(() => {
-    const urls = getStoredUrls();
-    const matched = urls.find(u => u.shortCode === shortCode);
-    if (matched) {
-      const now = new Date();
-      const expiry = new Date(matched.expiresAt);
-      if (now <= expiry) {
-        updateClickData(shortCode);
-        logEvent("REDIRECT", `Redirected to ${matched.originalUrl}`, { shortCode });
-        window.location.href = matched.originalUrl;
-      } else {
-        alert("This link has expired.");
-        navigate("/");
-      }
-    } else {
-      alert("Invalid link");
-      navigate("/");
-    }
-  }, [shortCode]);
+    const token = sessionStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
 
-  return <p>Redirecting...</p>;
-}
+  const handleLoginSuccess = () => {
+    sessionStorage.setItem("token", "mock-token");
+    setIsLoggedIn(true);
+  };
 
-function HomePage() {
+  const handleLogout = () => {
+    sessionStorage.removeItem("token");
+    setIsLoggedIn(false);
+  };
+
+  if (isLoggedIn === null) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
-    <Container maxWidth="md">
-      <Typography variant="h4" mt={2} mb={2}>URL Shortener</Typography>
-      <UrlShortenerForm onNewUrl={() => window.location.reload()} />
-      <UrlTable />
-    </Container>
+    <Box>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            URL Shortener
+          </Typography>
+          {isLoggedIn && (
+            <Button color="inherit" onClick={handleLogout}>
+              Logout
+            </Button>
+          )}
+        </Toolbar>
+      </AppBar>
+
+      <Container sx={{ mt: 4 }}>
+        {isLoggedIn ? (
+          <>
+            <UrlShortenerForm urls={urls} setUrls={setUrls} />
+            <Box mt={4}>
+              <UrlTable urls={urls} />
+            </Box>
+          </>
+        ) : (
+          <Login onLoginSuccess={handleLoginSuccess} />
+        )}
+      </Container>
+    </Box>
   );
 }
 
-export default function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/:shortCode" element={<RedirectPage />} />
-      </Routes>
-    </Router>
-  );
-}
+export default App;

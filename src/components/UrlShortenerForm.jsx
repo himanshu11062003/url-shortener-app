@@ -1,46 +1,53 @@
-import { useState } from "react";
-import { Box, TextField, Button } from "@mui/material";
-import { generateShortCode, saveUrlMapping } from "../utils/urlUtils";
-import { logEvent } from "../utils/logger";
+import React, { useState } from "react";
+import { TextField, Button, Box } from "@mui/material";
 
-export default function UrlShortenerForm({ onNewUrl }) {
-  const [url, setUrl] = useState("");
-  const [validity, setValidity] = useState(30);
+function UrlShortenerForm({ urls, setUrls }) {
+  const [longUrl, setLongUrl] = useState("");
   const [customCode, setCustomCode] = useState("");
 
-  const handleShorten = () => {
-    if (!url.trim()) return alert("Enter a valid URL");
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-    const shortCode = customCode.trim() || generateShortCode();
-    const expiryTime = new Date(Date.now() + validity * 60000).toISOString();
+    if (!longUrl.startsWith("http://") && !longUrl.startsWith("https://")) {
+      alert("Please enter a valid URL starting with http:// or https://");
+      return;
+    }
+
+    const code = customCode || Math.random().toString(36).substring(2, 8);
+    const newShortUrl = `https://short.ly/${code}`;
 
     const newEntry = {
-      originalUrl: url,
-      shortCode,
-      createdAt: new Date().toISOString(),
-      expiresAt: expiryTime,
-      clicks: []
+      _id: Date.now().toString(),
+      longUrl,
+      shortUrl: newShortUrl,
+      clicks: 0,
     };
 
-    saveUrlMapping(newEntry);
-    logEvent("SHORTEN", `Created short URL ${shortCode}`, { originalUrl: url });
-    onNewUrl();
-    setUrl("");
+    alert(`Short URL: ${newShortUrl}`);
+    setUrls([newEntry, ...urls]);
+    setLongUrl("");
     setCustomCode("");
   };
 
   return (
-    <Box display="flex" gap={2} my={2}>
-      <TextField label="Long URL" value={url} onChange={e => setUrl(e.target.value)} fullWidth />
-      <TextField label="Custom Code (optional)" value={customCode} onChange={e => setCustomCode(e.target.value)} />
+    <Box component="form" onSubmit={handleSubmit} display="flex" gap={2}>
       <TextField
-        label="Validity (mins)"
-        type="number"
-        value={validity}
-        onChange={e => setValidity(Number(e.target.value))}
-        sx={{ width: 120 }}
+        label="Long URL"
+        value={longUrl}
+        onChange={(e) => setLongUrl(e.target.value)}
+        fullWidth
+        required
       />
-      <Button variant="contained" onClick={handleShorten}>Shorten</Button>
+      <TextField
+        label="Custom Code (Optional)"
+        value={customCode}
+        onChange={(e) => setCustomCode(e.target.value)}
+      />
+      <Button type="submit" variant="contained" color="primary">
+        Shorten
+      </Button>
     </Box>
   );
 }
+
+export default UrlShortenerForm;
